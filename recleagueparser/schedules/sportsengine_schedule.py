@@ -26,8 +26,8 @@ class SportsEngineSchedule(Schedule):
     }
 
     def __init__(self, team_id, season_id, **kwargs):
-        super(SportsEngineSchedule, self).__init__(team_id=team_id,
-            season_id=season_id, **kwargs)
+        super(SportsEngineSchedule, self).__init__(
+            team_id=team_id, season_id=season_id, **kwargs)
         self.team_name = self.parse_team_name()
 
     def parse_team_name(self):
