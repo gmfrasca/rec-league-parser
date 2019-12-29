@@ -9,6 +9,7 @@ verify_ssl = true
 parsedatetime = "*"
 requests = "*"
 bs4 = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.7"
