@@ -1,4 +1,4 @@
-from recleagueparser.schedules.pointstreak_schedule import PointstreakSchedule
+from recleagueparser.schedules import PointstreakSchedule
 from recleagueparser.schedules.game import Game
 import unittest
 import mock
