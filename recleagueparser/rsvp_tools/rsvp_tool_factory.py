@@ -1,5 +1,5 @@
-from recleagueparsers.rsvp_tools.team_locker_room import TeamLockerRoom
-from recleagueparsers.rsvp_tools.benchapp import BenchApp
+from recleagueparser.rsvp_tools.team_locker_room import TeamLockerRoom
+from recleagueparser.rsvp_tools.benchapp import BenchApp
 
 
 class RsvpToolFactory(object):
