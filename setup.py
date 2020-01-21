@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'bs4',
         'parsedatetime',
-        'requests'
+        'requests',
+        'google-api-python-client',
     ]
 )
