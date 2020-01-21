@@ -9,7 +9,8 @@ import io
 
 ENTRY_REGEX = r'^[\*-]\s+.*$'
 REMOVE_REGEX = r'^[\*-]\s+'
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+SCOPES = ['https://www.googleapis.com/auth/drive.readonly',
+          'https://www.googleapis.com/auth/documents']
 
 
 class GoogleDriveSignupSheet(RsvpTool):
@@ -19,6 +20,8 @@ class GoogleDriveSignupSheet(RsvpTool):
         self.cred_file = cred_file
         self.skip_lists = skip_lists
         self.file_id = file_id
+        self.service = build('drive', 'v3', credentials=self.credentials)
+        self.writer = build('docs', 'v1', credentials=self.credentials)
 
     @property
     def credentials(self):
@@ -29,9 +32,8 @@ class GoogleDriveSignupSheet(RsvpTool):
         self.schedule = self.parse_file()
 
     def retrieve_text(self):
-        service = build('drive', 'v3', credentials=self.credentials)
-        request = service.files().export_media(fileId=self.file_id,
-                                               mimeType='text/plain')
+        request = self.service.files().export_media(fileId=self.file_id,
+                                                    mimeType='text/plain')
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -93,3 +95,57 @@ class GoogleDriveSignupSheet(RsvpTool):
 
     def get_next_game_players_list(self):
         return self.get_next_game().get('players', [])
+
+    def _get_insertion_ptr(self, text, list_num=0):
+        char_count = -1  # account for BOM character
+        list_count = -1
+        in_list = False
+        double_enter = False
+
+        for line in text.splitlines():
+            add_amt = len(line)
+
+            if re.match(ENTRY_REGEX, line):
+                add_amt -= 2  # Bullet points don't count
+                if not in_list:
+                    list_count += 1
+                    in_list = True
+                if list_num == list_count:
+                    return char_count + 1
+            else:
+                in_list = False
+
+            add_amt += 1
+            if len(line) == 0:  # Google exports single returns as double
+                if double_enter:
+                    add_amt = 0
+                    double_enter = False
+                else:
+                    double_enter = True
+            char_count += add_amt
+        return char_count
+
+    def _generate_insert_request(self, index, text):
+        return [{
+            'insertText': {
+                'location': {
+                    'index': index
+                },
+                'text': text + '\n'
+            }
+        }]
+
+    def _post_insert_request(self, request):
+        return self.writer.documents().batchUpdate(
+                   documentId=self.file_id,
+                   body={'requests': request}).execute()
+
+    def _rsvp(self, name, list_num):
+        old_body = self.retrieve_text()
+        ptr = self._get_insertion_ptr(old_body, list_num)
+        req = self._generate_insert_request(ptr, name)
+        self._post_insert_request(req)
+
+    def try_checkin(self, name, status):
+        list_pos = self.skip_lists if status.lower() == 'in' else 0
+        self._rsvp(name, list_pos)
