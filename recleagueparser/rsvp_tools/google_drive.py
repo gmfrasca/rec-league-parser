@@ -81,7 +81,7 @@ class GoogleDriveSignupSheet(RsvpTool):
     def get_next_game_attendance(self):
         return 'In: {}, Out: {}'.format(
             len(self.get_next_game_players_list()),
-            len(self.get_outage_list()))
+            len(self.get_outage_players_list()))
 
     def get_outage_players_list(self):
         return self.get_outage_list().get('players', [])
