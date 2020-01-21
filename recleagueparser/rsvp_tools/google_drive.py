@@ -1,18 +1,15 @@
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.http import MediaIoBaseDownload
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
 from recleagueparser.rsvp_tools.rsvp_tool import RsvpTool
+from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
 import os.path
 import logging
-import pickle
 import re
 import io
 
 
 ENTRY_REGEX = r'^[\*-]\s+.*$'
 REMOVE_REGEX = r'^[\*-]\s+'
-PICKLE_LOCATION = './gcp.token.pickle'
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 
 
@@ -26,20 +23,8 @@ class GoogleDriveSignupSheet(RsvpTool):
 
     @property
     def credentials(self):
-        creds = None
-        if os.path.exists(PICKLE_LOCATION):
-            with open(PICKLE_LOCATION, 'rb') as token:
-                creds = pickle.load(token)
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    self.cred_file, SCOPES)
-                creds = flow.run_local_server(port=0)
-            with open(PICKLE_LOCATION, 'wb') as token:
-                pickle.dump(creds, token)
-        return creds
+        return service_account.Credentials.from_service_account_file(
+            self.cred_file, scopes=SCOPES)
 
     def login(self):
         self.schedule = self.parse_file()
