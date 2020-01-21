@@ -35,10 +35,10 @@ class RsvpTool(object):
         raise NotImplementedError
 
     def get_next_game_lines(self):
-        raise NotImplementedError
+        return None
 
     def get_team_fee_progress(self):
-        raise NotImplementedError
+        return None
 
 
 def main():

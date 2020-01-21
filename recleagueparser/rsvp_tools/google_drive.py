@@ -2,7 +2,6 @@ from recleagueparser.rsvp_tools.rsvp_tool import RsvpTool
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-import os.path
 import logging
 import re
 import io
