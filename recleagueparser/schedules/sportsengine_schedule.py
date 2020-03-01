@@ -5,6 +5,8 @@ off of SportsEngine, a team stats-tracking website
 from bs4 import BeautifulSoup
 from recleagueparser.schedules.schedule import Schedule
 from recleagueparser.schedules.game import Game
+import logging
+import sys
 
 SE_URL = 'http://www.pahl.org'
 SE_SCHED_EXT = 'schedule/team_instance'
@@ -24,6 +26,7 @@ class SportsEngineSchedule(Schedule):
         'result': 1,
         'location': 3
     }
+    CANCELLED_TEXT = "cancelled"
 
     def __init__(self, team_id, season_id, **kwargs):
         super(SportsEngineSchedule, self).__init__(
@@ -51,6 +54,7 @@ class SportsEngineSchedule(Schedule):
             cells = game_row.find_all('td')
             gamedate = cells[self.columns['gameday']].text
             gametime = self.get_game_time(cells[self.columns['gametime']])
+            cancelled = self.is_game_cancelled(gametime)
             hometeam, awayteam = self.parse_teams(
                 cells[self.columns['awayteam']])
             homescore, awayscore = self.parse_score(
@@ -58,7 +62,8 @@ class SportsEngineSchedule(Schedule):
                 cells[self.columns['awayteam']])
             final = self.is_score_final(cells[self.columns['result']])
             game = Game(gamedate, gametime, hometeam, homescore, awayteam,
-                        awayscore, prevgame=prevgame, final=final)
+                        awayscore, prevgame=prevgame, final=final,
+                        cancelled=cancelled)
             games.append(game)
             prevgame = game
         self._logger.info("Parsed {} Games from Table".format(len(games)))
@@ -71,6 +76,10 @@ class SportsEngineSchedule(Schedule):
         # TODO: Should probably parse the "Status" column instead
         divs = score.find_all("div")
         return divs is not None and len(divs) > 1
+
+    def is_game_cancelled(self, gametime):
+        # TODO: Implement a better way to do this
+        return gametime.strip().lower() == self.CANCELLED_TEXT
 
     def get_game_time(self, gametime_cell):
         gametime = gametime_cell.a if gametime_cell.a is not None else None
@@ -97,3 +106,14 @@ class SportsEngineSchedule(Schedule):
         if self.is_home_team(opponent):
             return scores[0], scores[1]
         return scores[1], scores[0]
+
+
+def main():
+    assert len(sys.argv) > 2
+    sched = SportsEngineSchedule(sys.argv[1], sys.argv[2])
+    logging.basicConfig(level=logging.DEBUG)
+    logging.debug(sched)
+
+
+if __name__ == '__main__':
+    main()

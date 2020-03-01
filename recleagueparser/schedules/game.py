@@ -1,14 +1,17 @@
 from recleagueparser import parsetime as pt
 import datetime
 
+DEFAULT_COMPLETED_GAME_TIME = "12:01 AM EST"
+
 
 class Game(object):
     """Represents a game parsed from a Pointstreak schedule"""
 
     def __init__(self, date, time, hometeam, homescore, awayteam, awayscore,
-                 year=None, prevgame=None, final=False):
+                 year=None, prevgame=None, final=False, cancelled=False):
         """ Store this game's relevant data """
         self.final = final
+        self.cancelled = cancelled
         self.year = pt.determine_year(year)
         self.prevgame = prevgame
         self.parse_date(date, time, self.year, prevgame)
@@ -27,7 +30,8 @@ class Game(object):
                     homescore=self.homescore,
                     awayteam=self.awayteam,
                     awayscore=self.awayscore,
-                    final=self.final)
+                    final=self.final,
+                    cancelled=self.cancelled)
 
     @property
     def winning_team(self):
@@ -46,6 +50,7 @@ class Game(object):
     @property
     def full_gametime_str(self):
         descriptor = pt.FINAL_DESCRIPTOR if self.final else pt.FULL_DESCRIPTOR
+        descriptor = pt.CANCELLED_DESCRIPTOR if self.cancelled else descriptor
         return self.full_gametime.strftime(descriptor)
 
     def result_for_team(self, team_name):
@@ -59,6 +64,8 @@ class Game(object):
 
     def parse_date(self, date, time, year, prevgame=None):
         # TODO: Determine if we should actually set includes_day
+        if self.cancelled or self.final:
+            time = DEFAULT_COMPLETED_GAME_TIME
 
         self.date = pt.normalize_date(date.strip(), includes_day=True)
         self.time = pt.normalize_time(time.strip())
