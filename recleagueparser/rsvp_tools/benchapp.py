@@ -141,8 +141,7 @@ class BenchApp(RsvpTool):
         player_list = data.get(list_type, list())
         names = list()
         for player in player_list:
-            names.append(player.get('player', None).strip().encode('ascii',
-                                                                   'ignore'))
+            names.append(player.get('player', None).strip())
         return names
 
     def get_list_of_attending_players(self):
@@ -334,8 +333,7 @@ class BenchApp(RsvpTool):
                             seasonID=int(seasonID),
                             playerID=int(playerID),
                             status=str(status),
-                            gameKey=gameKey.encode('ascii',
-                                                   'ignore').strip("'"))
+                            gameKey=gameKey.strip("'"))
                 self.session.get('{0}{1}'.format(DEFAULT_URL, CHECKIN_URL),
                                  params=data)
                 self._logger.info("Success.")
@@ -347,6 +345,7 @@ class BenchApp(RsvpTool):
 def main():
     assert len(sys.argv) > 2
     ba = BenchApp(sys.argv[1], sys.argv[2])
+    logging.basicConfig(level=logging.DEBUG)
     logging.debug(ba.get_next_game_attendees())
     logging.debug(ba.get_next_game_attendance())
     logging.debug(ba.get_next_game_lines())
