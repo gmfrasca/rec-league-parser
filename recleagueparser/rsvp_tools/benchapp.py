@@ -96,7 +96,7 @@ class BenchApp(RsvpTool):
         # These don't work anymore
         # in_count = soup.find("div", {"class": "inCount"}).text
         # out_count = soup.find("div", {"class": "outCount"}).text
-        #data = dict(in_count=in_count, out_count=out_count)
+        # data = dict(in_count=in_count, out_count=out_count)
         data = dict()
         for checkin_type in ['attending', 'notAttending',
                              'waitlist', 'unknown']:
@@ -323,7 +323,7 @@ class BenchApp(RsvpTool):
                 # Multiple results, too ambigous so can't continue
                 if found:
                     raise CheckinException(
-                        "Multiple Players with name same name found")
+                        "Multiple Players with same name found")
                 else:
                     found = True
                     playeritem = player
@@ -332,6 +332,8 @@ class BenchApp(RsvpTool):
                 "Found {}, attempting to RSVP with '{}'".format(name, status))
             try:
                 checkin = playeritem.find("a", {"href": "#IN"})
+                checkin = playeritem.find(
+                    "div", {'class', 'contextualWrapper'})
                 checkin_fn = checkin.get('onclick', '')
                 params = checkin_fn.split(';')[0].split(')')[0].split('(')[1]
                 (teamID, seasonID, gameID, gameKey, playerID,
@@ -348,6 +350,9 @@ class BenchApp(RsvpTool):
             except Exception:
                 raise CheckinException(
                     "ERROR::Could not check in {0}".format(name))
+        else:
+            raise CheckinException(
+                "ERROR::Could not find player {0}".format(name))
 
 
 def main():
