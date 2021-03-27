@@ -10,6 +10,7 @@ import re
 
 DEFAULT_URL = 'https://benchapp.com'
 LOGIN_URL = '/player-area/ajax/login.php'
+LOGOUT_URL = '/logout'
 NEXT_GAME_URL = '/schedule/next-event'
 CHECKIN_URL = '/schedule-area/ajax/setAttendance.php'
 FINANCES_URL = '/team/finances/fees/index.html'
@@ -37,12 +38,16 @@ class BenchApp(RsvpTool):
         try:
             self._logger.info("Logging into BenchApp")
             data = dict(email=self.username, password=self.password)
-            self.session.post("{0}{1}".format(self.baseurl, LOGIN_URL),
-                              data=data)
+            resp = self.session.post("{0}{1}".format(self.baseurl, LOGIN_URL),
+                                     data=data)
+            self._logger.debug(resp.text)
             self._logged_in = True
         except Exception:
             return
             self._logger.warning("Could not log into BenchApp")
+
+    def logout(self):
+        self.session.post("{0}{1}".FORMAT(self.baseurl, LOGOUT_URL))
 
     def parse_playeritem(self, playeritem):
         text = playeritem.findAll("a", {"href": "#profile"})[0]
@@ -88,9 +93,11 @@ class BenchApp(RsvpTool):
             return dict()
         page = self.get_next_game_page().text
         soup = BeautifulSoup(page, 'html.parser')
-        in_count = soup.find("div", {"class": "inCount"}).text
-        out_count = soup.find("div", {"class": "outCount"}).text
-        data = dict(in_count=in_count, out_count=out_count)
+        # These don't work anymore
+        # in_count = soup.find("div", {"class": "inCount"}).text
+        # out_count = soup.find("div", {"class": "outCount"}).text
+        #data = dict(in_count=in_count, out_count=out_count)
+        data = dict()
         for checkin_type in ['attending', 'notAttending',
                              'waitlist', 'unknown']:
             players = soup.find("ul", {"id": checkin_type})
@@ -157,10 +164,11 @@ class BenchApp(RsvpTool):
         return self.get_list_of_player_names('unknown')
 
     def get_number_checked_in(self):
-        return self.get_next_game_data().get('in_count', 0)
+
+        return len(self.get_list_of_attending_players())
 
     def get_number_checked_out(self):
-        return self.get_next_game_data().get('out_count', 0)
+        return len(self.get_list_of_not_attending_players())
 
     def get_number_waitlisted(self):
         return len(self.get_list_of_waitlisted_players())
