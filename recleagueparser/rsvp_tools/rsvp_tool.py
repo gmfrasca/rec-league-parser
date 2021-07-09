@@ -8,13 +8,14 @@ class RsvpTool(object):
     DEFAULT_URL = 'https://teamlockerroom.com'
 
     def __init__(self, username, password, url=DEFAULT_URL,
-                 finance=False, **kwargs):
+                 finance=False, name_mapping={}, **kwargs):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.baseurl = url
         self.session = requests.session()
         self.username = username
         self.password = password
         self.finance = finance
+        self.name_mapping = name_mapping
         self._logged_in = False
         self.login()
 
@@ -39,6 +40,21 @@ class RsvpTool(object):
 
     def get_team_fee_progress(self):
         return None
+
+    def lookup_rsvp_user(self, in_name):
+        '''
+        Search through the name mapping to see if in_name is an alias
+        default back to in_name if not found.
+        '''
+        for actual, aliases in self.name_mapping.items():
+            if isinstance(aliases, str):
+                if aliases == in_name:
+                    return actual
+            elif isinstance(aliases, list):
+                for alias in aliases:
+                    if alias == in_name:
+                        return actual
+        return in_name
 
 
 def main():
