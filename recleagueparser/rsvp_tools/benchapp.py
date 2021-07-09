@@ -303,6 +303,7 @@ class BenchApp(RsvpTool):
 
     def try_checkin(self, name, status='in'):
         self.login()
+        name = self.lookup_rsvp_user(name)
         self._logger.info("RSVPing {} with status '{}'".format(name, status))
         if self.has_upcoming_game is False:
             return
@@ -354,8 +355,8 @@ class BenchApp(RsvpTool):
 
 def main():
     assert len(sys.argv) > 2
-    ba = BenchApp(sys.argv[1], sys.argv[2])
     logging.basicConfig(level=logging.DEBUG)
+    ba = BenchApp(sys.argv[1], sys.argv[2])
     logging.debug(ba.get_next_game_attendees())
     logging.debug(ba.get_next_game_attendance())
     logging.debug(ba.get_next_game_lines())
