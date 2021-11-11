@@ -17,7 +17,7 @@ class PlayerStats(object):
 
     STALE_TIME = 60
 
-    def __init__(self, team_id, season_id, company, **kwargs):
+    def __init__(self, team_id=None, season_id=None, company=None, **kwargs):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.html_doc = None
         self.team_id = team_id
@@ -45,8 +45,8 @@ class PlayerStats(object):
 
     @property
     def roster_list(self):
-        roster = self.players.get('players').values()
-        roster.extend(self.players.get('goalies').values())
+        roster = list(self.players.get('players').values())
+        roster.extend(list(self.players.get('goalies').values()))
         return roster
 
     def get_player(self, search_name):
