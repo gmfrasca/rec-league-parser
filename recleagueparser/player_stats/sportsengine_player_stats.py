@@ -12,6 +12,7 @@ SE_STATS_EXT = 'stats/team_instance'
 
 class SportsEnginePlayerStats(PlayerStats):
 
+    # TODO: spec/override in config
     # Expected Column Data Contents
     COLUMNS = {
         'jersey_number': 0,
@@ -24,8 +25,8 @@ class SportsEnginePlayerStats(PlayerStats):
         'pim': 7,
         'wins': 3,
         'losses': 4,
-        'ties': 5,
-        'goals_against': 6
+        'ties': -1,
+        'goals_against': 5
     }
 
     def get_stats_url(self, team_id, season_id):
@@ -38,7 +39,9 @@ class SportsEnginePlayerStats(PlayerStats):
             url, 'dataTable statTable theme-stat-table')
 
     def get_stat(self, row, data_name):
-        return row[self.COLUMNS[data_name]].text.strip()
+        if self.COLUMNS.get(data_name, -1) < 0:
+            return ''
+        return row[self.COLUMNS.get(data_name)].text.strip()
 
     # TODO
     def parse_table(self):
@@ -67,7 +70,7 @@ class SportsEnginePlayerStats(PlayerStats):
         for goalie_row in goalie_table.find_all('tr'):
             cells = goalie_row.find_all('td')
             goalie_name = self.get_stat(cells, 'player_name')
-            self._logger.debug("Adding goalie '{}'".format(player_name))
+            self._logger.debug("Adding goalie '{}'".format(goalie_name))
             goalie = Player(name=goalie_name,
                             games_played=self.get_stat(cells, 'games_played'),
                             wins=self.get_stat(cells, 'wins'),
