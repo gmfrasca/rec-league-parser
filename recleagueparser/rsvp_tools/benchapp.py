@@ -349,7 +349,7 @@ class BenchApp(RsvpTool):
                 raise rsvptoolexceptions.CheckinFailedException(
                     "ERROR::Could not check in {0}".format(name))
         else:
-            raise rsvptoolexceptions.NoPlayerFountCheckinException(
+            raise rsvptoolexceptions.NoPlayerFoundCheckinException(
                 "ERROR::Could not find player {0}".format(name))
 
 
