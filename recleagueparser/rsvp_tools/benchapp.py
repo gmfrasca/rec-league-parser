@@ -1,3 +1,4 @@
+from recleagueparser.rsvp_tools import exceptions as rsvptoolexceptions
 from recleagueparser.rsvp_tools.rsvp_tool import RsvpTool
 from bs4 import BeautifulSoup
 from re import sub
@@ -16,10 +17,6 @@ CHECKIN_URL = '/schedule-area/ajax/setAttendance.php'
 FINANCES_URL = '/team/finances/fees/index.html'
 
 PROGRESS_BAR_CHARS = 20
-
-
-class CheckinException(Exception):
-    pass
 
 
 class BenchApp(RsvpTool):
@@ -322,7 +319,7 @@ class BenchApp(RsvpTool):
                     re.search(name.lower(), player.text.lower()) is not None:
                 # Multiple results, too ambigous so can't continue
                 if found:
-                    raise CheckinException(
+                    raise rsvptoolexceptions.MultiplePlayersCheckinException(
                         "Multiple Players with same name found")
                 else:
                     found = True
@@ -348,10 +345,10 @@ class BenchApp(RsvpTool):
                                  params=data)
                 self._logger.info("Success.")
             except Exception:
-                raise CheckinException(
+                raise rsvptoolexceptions.CheckinFailedException(
                     "ERROR::Could not check in {0}".format(name))
         else:
-            raise CheckinException(
+            raise rsvptoolexceptions.NoPlayerFountCheckinException(
                 "ERROR::Could not find player {0}".format(name))
 
 
