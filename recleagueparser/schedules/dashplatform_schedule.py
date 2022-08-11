@@ -66,10 +66,14 @@ class DashPlatformSchedule(Schedule):
                 cell_date = gamedate_cell[0].text
                 cell_time = gamedate_cell[1].text.split(' ', 1)[1]
                 structured = '{} {}'.format(cell_date, cell_time)
-                parsed = pt.normalize_date(structured, now.year,
+                parsed_date = pt.normalize_date(structured, now.year,
                                            return_type=datetime.datetime)
-                gamedate = parsed.strftime(pt.DATE_DESCRIPTOR)
-                gametime = parsed.strftime(pt.TIME_DESCRIPTOR)
+                gamedate = parsed_date.strftime(pt.DATE_DESCRIPTOR)
+
+                parsed_time = pt.normalize_time(
+                    structured, return_type=datetime.datetime
+                )
+                gametime = parsed_time.strftime(pt.TIME_DESCRIPTOR)
 
                 # Parse Score
                 event_cells = game_row.find('div', {'class': 'event__details'})
