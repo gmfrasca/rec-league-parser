@@ -81,14 +81,28 @@ class DashPlatformSchedule(Schedule):
                 away_cells = score_cells[0].find_all('div')
                 home_cells = score_cells[1].find_all('div')
 
-                ascore = away_cells[1].text
-                hscore = home_cells[1].text
-                ascore = None if ascore == "-" else ascore
-                hscore = None if hscore == "-" else hscore
+                # Default Team/Score values
+                ateam = "AWAY"
+                hteam = "HOME"
+                ascore = None
+                hscore = None
 
-                ateam = away_cells[0].a.text
-                hteam = home_cells[0].a.text
+                # Set Away Team and Score
+                try:
+                    ateam = away_cells[0].a.text
+                    ascore = away_cells[1].text
+                    ascore = None if ascore == "-" else ascore
+                except (AttributeError, IndexError) as err:
+                    self._logger.debug("Could not parse away cell team or score, using defaults")
 
+                # Set Home Team and Score
+                try:
+                    hteam = home_cells[0].a.text
+                    hscore = home_cells[1].text
+                    hscore = None if hscore == "-" else hscore
+                except (AttributeError, IndexError) as err:
+                    self._logger.debug("Could not parse home cell team or score, using defaults")
+                    
                 final = self.is_score_final(None)
                 game = Game(gamedate, gametime, hteam, hscore,
                             ateam, ascore, prevgame=prevgame, final=final)
