@@ -4,12 +4,13 @@ from bs4 import BeautifulSoup
 from re import sub
 from decimal import Decimal
 from functools import reduce
+from requests import Request
 import logging
 import sys
 import re
 
 
-DEFAULT_URL = 'https://benchapp.com'
+DEFAULT_URL = 'https://new.benchapp.com'
 LOGIN_URL = '/player-area/ajax/login.php'
 LOGOUT_URL = '/logout'
 NEXT_GAME_URL = '/schedule/next-event'
@@ -34,9 +35,16 @@ class BenchApp(RsvpTool):
             return
         try:
             self._logger.info("Logging into BenchApp")
-            data = dict(email=self.username, password=self.password)
-            resp = self.session.post("{0}{1}".format(self.baseurl, LOGIN_URL),
-                                     data=data)
+            data = {"email": self.username, "password": self.password}
+            req = Request(
+                "POST",
+                f"{self.baseurl}{LOGIN_URL}",
+                files={
+                    "email": (None, data["email"]),
+                    "password": (None, data["password"]),
+                }
+            ).prepare()
+            resp = self.session.send(req)
             self._logger.debug(resp.text)
             self._logged_in = True
         except Exception:
@@ -325,6 +333,7 @@ class BenchApp(RsvpTool):
                 else:
                     found = True
                     playeritem = player
+        self._logger.info("Done searching")
         if found:
             self._logger.info(
                 "Found {}, attempting to RSVP with '{}'".format(name, status))
