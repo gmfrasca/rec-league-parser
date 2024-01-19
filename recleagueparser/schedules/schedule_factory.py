@@ -4,6 +4,9 @@ from recleagueparser.schedules.sportsengine_schedule import (
     SportsEngineSchedule)
 from recleagueparser.schedules.dashplatform_schedule import (
     DashPlatformSchedule)
+from recleagueparser.schedules.ics_schedule import (
+    ICSSchedule
+)
 from recleagueparser.schedules.debug_schedule import (
     DebugSchedule, ScoreUpdateDebugSchedule, TimeUpdateDebugSchedule,
     GameAddDebugSchedule, GameRemoveDebugSchedule, GameFinalizedDebugSchedule)
@@ -18,6 +21,8 @@ class ScheduleFactory(object):
             return SportsEngineSchedule(**kwargs)
         elif schedule_type == 'dash':
             return DashPlatformSchedule(**kwargs)
+        elif schedule_type == 'ics':
+            return ICSSchedule(**kwargs)
         elif schedule_type == 'debug':
             return DebugSchedule(**kwargs)
         elif schedule_type == 'debug_scoreupdate':
