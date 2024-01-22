@@ -42,6 +42,20 @@ class Schedule(object):
         return res
 
     @property
+    def future_games(self):
+        class FutureSchedule(Schedule):
+
+            def __init__(self, games=[], *args, **kwargs):
+                self.games=games
+
+        fgames = []
+        for g in self.games:
+            if g.future:
+                fgames.append(g)
+        fsched = FutureSchedule(fgames)
+        return fsched
+
+    @property
     def schedule_is_stale(self):
         if self.html_doc is None:
             return True
