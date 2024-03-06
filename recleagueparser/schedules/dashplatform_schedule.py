@@ -21,13 +21,14 @@ class DashPlatformSchedule(Schedule):
         'awayteam': 5,
     }
 
-    def __init__(self, team_id, company_id, columns=None, **kwargs):
+    def __init__(self, team_id, company_id, columns=None, default_game_final=False, **kwargs):
         super(DashPlatformSchedule, self).__init__(team_id=team_id,
                                                    company_id=company_id,
                                                    columns=columns, **kwargs)
         self.html_doc = None
         self.team_id = team_id
         self.company_id = company_id
+        self.default_game_final = default_game_final
         self.url = self.get_schedule_url(self.team_id, self.company_id)
         self.refresh_schedule()
 
@@ -87,11 +88,18 @@ class DashPlatformSchedule(Schedule):
                 ascore = None
                 hscore = None
 
+                # Track if Game has started
+                game_started = False
+
                 # Set Away Team and Score
                 try:
                     ateam = away_cells[0].a.text
                     ascore = away_cells[1].text
-                    ascore = None if ascore == "-" else ascore
+                    if ascore == "-":
+                        ascore = None
+                    else:
+                        game_started = True
+
                 except (AttributeError, IndexError) as err:
                     self._logger.debug("Could not parse away cell team or score, using defaults")
 
@@ -99,11 +107,14 @@ class DashPlatformSchedule(Schedule):
                 try:
                     hteam = home_cells[0].a.text
                     hscore = home_cells[1].text
-                    hscore = None if hscore == "-" else hscore
+                    if hscore == "-":
+                        hscore = None
+                    else:
+                        game_started = True
                 except (AttributeError, IndexError) as err:
                     self._logger.debug("Could not parse home cell team or score, using defaults")
                     
-                final = self.is_score_final(None)
+                final = self.is_score_final(None, game_started)
                 game = Game(gamedate, gametime, hteam, hscore,
                             ateam, ascore, prevgame=prevgame, final=final)
                 games.append(game)
@@ -111,8 +122,10 @@ class DashPlatformSchedule(Schedule):
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))
         return games
 
-    def is_score_final(self, score):
-        return False  # TODO: Implement
+    def is_score_final(self, score, game_started=False):
+        if game_started:
+            return self.default_game_final  # TODO: Implement
+        return False
 
     def parse_game(self, game_cell):
         if game_cell.div:
