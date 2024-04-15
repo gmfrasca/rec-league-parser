@@ -13,7 +13,7 @@ class ScheduleComparer(object):
         self.schedule2 = schedule2
         self.differ = difflib.Differ()
 
-    def sched_diff(self, only_future_games=True, long_diff=False):
+    def sched_diff(self, only_future_games=True, long_diff=False, include_keywords=None, exclude_keywords=None):
         self.schedule1.refresh_schedule()
         self.schedule2.refresh_schedule()
         s1 = self.schedule1.future_games if only_future_games else self.schedule1
@@ -21,6 +21,22 @@ class ScheduleComparer(object):
         s1 = str(s1).splitlines(keepends=True)
         s2 = str(s2).splitlines(keepends=True)
         res = list(self.differ.compare(s1, s2))
+        included = []
+        for l in res:
+            exclude = False
+            if exclude_keywords and len(exclude_keywords) > 0:
+                for kw in exclude_keywords:
+                    if kw in l:
+                        exclude = True
+            if not exclude:
+                if include_keywords and len(include_keywords) > 0:
+                    for kw in include_keywords:
+                        if kw in l:
+                            included.append(l)
+                else:
+                    included.append(l)
+                    
+        res = included
         if not long_diff:
             res = [x for x in res if x[0:2] in self.DIFF_PREFIXES]
         return ''.join(res)
