@@ -43,7 +43,14 @@ class DashPlatformSchedule(Schedule):
             self._logger.info("Schedule is stale, refreshing")
             self.send_get_request(url)
         soup = BeautifulSoup(self.html_doc, 'html.parser')
+        self.team_name = self.retrieve_team_name(soup)
         return soup.find("div", {'class': table_class})
+
+    def retrieve_team_name(self, soup):
+        header = soup.find("h2")
+        if header:
+            return header.text.split(" ", maxsplit=1)[1]
+        return None
 
     def parse_table(self):
         """
