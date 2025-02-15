@@ -50,6 +50,7 @@ class ICSSchedule(Schedule):
                     # Parse Date
                     dt = i.get("dtstart").dt
                     gamedate = dt.strftime(pt.DATE_DESCRIPTOR)
+                    gameyear = dt.year
                     gametime = dt.strftime(pt.TIME_DESCRIPTOR)
 
                     # Parse Score  #TODO: implement
@@ -59,7 +60,8 @@ class ICSSchedule(Schedule):
 
                     # Add game to Schedule
                     game = Game(gamedate, gametime, hteam, hscore,
-                                ateam, ascore, prevgame=prevgame, final=final)
+                                ateam, ascore, year=gameyear,
+                                prevgame=prevgame, final=final)
                     games.append(game)
                     prevgame = game
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))  
