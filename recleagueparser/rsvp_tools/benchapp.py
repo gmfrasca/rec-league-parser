@@ -362,7 +362,7 @@ class BenchApp(RsvpTool):
                 "ERROR::Could not find player {0}".format(name))
 
     def get_duty_assingment(self, duty_type="Drinks"):
-        self._logger.debug("Getting next game's positions")
+        self._logger.debug("Getting next game's data")
         self.login()
         if self.has_upcoming_game is False:
             return "No upcoming games found."
@@ -375,6 +375,23 @@ class BenchApp(RsvpTool):
             if duty_type.lower() == dtype.lower():
                 return dname
         return f"Could not find next game's assingment for {duty_type}."
+
+    def get_all_duty_assingments(self):
+        self._logger.debug("Getting next game's data")
+        self.login()
+        if self.has_upcoming_game is False:
+            return "No upcoming games found."
+        page = self.get_next_game_page().text
+        soup = BeautifulSoup(page, 'html.parser')
+        duties_str = "Assigned Duties:"
+        duty_divs = soup.find_all('div', {'class': 'duty tooltip'})
+        if len(duty_divs) > 0:
+            for d in duty_divs:
+                duties_str = f"{duties_str}\r\n{d['title']}"
+        else:
+            duties_str = f"{duties_str}\r\nNo assignments"
+        return duties_str
+
 
 def main():
     assert len(sys.argv) > 2
