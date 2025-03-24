@@ -361,6 +361,20 @@ class BenchApp(RsvpTool):
             raise rsvptoolexceptions.NoPlayerFoundCheckinException(
                 "ERROR::Could not find player {0}".format(name))
 
+    def get_duty_assingment(self, duty_type="Drinks"):
+        self._logger.debug("Getting next game's positions")
+        self.login()
+        if self.has_upcoming_game is False:
+            return "No upcoming games found."
+        page = self.get_next_game_page().text
+        soup = BeautifulSoup(page, 'html.parser')
+        duties = soup.find_all('div', {'class': 'duty tooltip'})
+        for duty in duties:
+            dtype = duty.find('div', {'class': 'type'}).text
+            dname = duty.find('div', {'class': 'name'}).text
+            if duty_type.lower() == dtype.lower():
+                return dname
+        return f"Could not find next game's assingment for {duty_type}."
 
 def main():
     assert len(sys.argv) > 2
