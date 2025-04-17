@@ -374,7 +374,7 @@ class BenchApp(RsvpTool):
             dname = duty.find('div', {'class': 'name'}).text
             if duty_type.lower() == dtype.lower():
                 return dname
-        return f"Could not find next game's assignment for {duty_type}."
+        return ""
 
     def get_all_duty_assignments(self):
         self._logger.debug("Getting next game's data")
