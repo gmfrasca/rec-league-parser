@@ -361,7 +361,7 @@ class BenchApp(RsvpTool):
             raise rsvptoolexceptions.NoPlayerFoundCheckinException(
                 "ERROR::Could not find player {0}".format(name))
 
-    def get_duty_assingment(self, duty_type="Drinks"):
+    def get_duty_assignment(self, duty_type="Drinks"):
         self._logger.debug("Getting next game's data")
         self.login()
         if self.has_upcoming_game is False:
@@ -374,9 +374,9 @@ class BenchApp(RsvpTool):
             dname = duty.find('div', {'class': 'name'}).text
             if duty_type.lower() == dtype.lower():
                 return dname
-        return f"Could not find next game's assingment for {duty_type}."
+        return f"Could not find next game's assignment for {duty_type}."
 
-    def get_all_duty_assingments(self):
+    def get_all_duty_assignments(self):
         self._logger.debug("Getting next game's data")
         self.login()
         if self.has_upcoming_game is False:
