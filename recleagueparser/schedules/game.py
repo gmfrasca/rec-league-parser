@@ -8,7 +8,8 @@ class Game(object):
     """Represents a game parsed from a Pointstreak schedule"""
 
     def __init__(self, date, time, hometeam, homescore, awayteam, awayscore,
-                 year=None, prevgame=None, final=False, cancelled=False):
+                 year=None, prevgame=None, final=False, cancelled=False,
+                 location=None, field=None):
         """ Store this game's relevant data """
         self.final = final
         self.cancelled = cancelled
@@ -19,6 +20,8 @@ class Game(object):
         self.homescore = homescore
         self.awayteam = awayteam
         self.awayscore = awayscore
+        self.location = location
+        self.field = field
 
     @property
     def data(self):
@@ -53,6 +56,14 @@ class Game(object):
         descriptor = pt.CANCELLED_DESCRIPTOR if self.cancelled else descriptor
         return self.full_gametime.strftime(descriptor)
 
+    @property
+    def full_location(self):
+        joiner = " - " if self.location else ""
+        full_location = self.location if self.location else ""
+        if self.field:
+            full_location = f"{full_location}{joiner}{self.field}"
+        return full_location
+
     def result_for_team(self, team_name):
         if self.winning_team is None:
             return None
@@ -83,6 +94,9 @@ class Game(object):
                 self.hometeam, self.homescore, self.awayscore,
                 self.awayteam, self.full_gametime_str)
 
-        return '{0} vs {1} at {2}'.format(self.hometeam,
-                                          self.awayteam,
-                                          self.full_gametime_str)
+        future_game_tagline = '{0} vs {1} at {2}'.format(self.hometeam,
+                                                         self.awayteam,
+                                                         self.full_gametime_str)
+        if self.full_location:
+            future_game_tagline = f"{future_game_tagline}, {self.full_location}"
+        return future_game_tagline
