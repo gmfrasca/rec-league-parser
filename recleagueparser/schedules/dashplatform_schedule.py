@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 from recleagueparser.schedules.schedule import Schedule
 from recleagueparser.schedules.game import Game
 import datetime
+import logging
+import sys
 
 
 class DashPlatformSchedule(Schedule):
@@ -120,10 +122,22 @@ class DashPlatformSchedule(Schedule):
                         game_started = True
                 except (AttributeError, IndexError) as err:
                     self._logger.debug("Could not parse home cell team or score, using defaults")
+
+                # Game Location
+                location = None
+                field = None
+                try:
+                    location_cells = score_cells[2].find_all('div')
+                    field_cells = score_cells[3].find_all('div')
+                    location = location_cells[0].small.text
+                    field = field_cells[0].small.text
+                except:
+                    self._logger.debug("Could not find game Location, skipping.")
                     
                 final = self.is_score_final(None, game_started)
                 game = Game(gamedate, gametime, hteam, hscore,
-                            ateam, ascore, prevgame=prevgame, final=final)
+                            ateam, ascore, prevgame=prevgame, final=final,
+                            location=location, field=field)
                 games.append(game)
                 prevgame = game
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))
@@ -153,5 +167,7 @@ class DashPlatformSchedule(Schedule):
 
 
 if __name__ == '__main__':
-    sched = DashPlatformSchedule()
-    print(sched)
+    assert len(sys.argv) > 2
+    logging.basicConfig(level=logging.DEBUG)
+    sched = DashPlatformSchedule(team_id=sys.argv[1], company_id=sys.argv[2])
+    logging.debug(sched)
