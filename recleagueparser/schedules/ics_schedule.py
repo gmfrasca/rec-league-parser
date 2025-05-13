@@ -53,6 +53,11 @@ class ICSSchedule(Schedule):
                     gameyear = dt.year
                     gametime = dt.strftime(pt.TIME_DESCRIPTOR)
 
+                    # Parse Location
+                    # TODO: assuming BA format of "$LOCATION - $RINK"
+                    full_loc = i.get("location")
+                    location, field = self.parse_location(full_loc)
+
                     # Parse Score  #TODO: implement
                     hscore = 0
                     ascore = 0
@@ -61,12 +66,20 @@ class ICSSchedule(Schedule):
                     # Add game to Schedule
                     game = Game(gamedate, gametime, hteam, hscore,
                                 ateam, ascore, year=gameyear,
-                                prevgame=prevgame, final=final)
+                                prevgame=prevgame, final=final,
+                                location=location, field=field)
                     games.append(game)
                     prevgame = game
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))  
         return games
 
+    def parse_location(self, full_location, delim=" - "):
+        if not full_location:
+            return None, None
+        if delim not in full_location:
+            return full_location, None
+        location, field = full_location.split(delim, 1)
+        return location, field
 
     def parse_summary(self, summary):
         delim_len = len(self.opponent_delimiter)
