@@ -2,7 +2,7 @@ from recleagueparser import parsetime as pt
 import datetime
 
 DEFAULT_COMPLETED_GAME_TIME = "12:01 AM EST"
-
+LOCATION_JOINER = " - "
 
 class Game(object):
     """Represents a game parsed from a Pointstreak schedule"""
@@ -58,7 +58,7 @@ class Game(object):
 
     @property
     def full_location(self):
-        joiner = " - " if self.location else ""
+        joiner = LOCATION_JOINER if self.location else ""
         full_location = self.location if self.location else ""
         if self.field:
             full_location = f"{full_location}{joiner}{self.field}"
