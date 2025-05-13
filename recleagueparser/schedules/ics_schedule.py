@@ -2,7 +2,7 @@
 Quick and Dirty ics parser to read a team schedule
 """
 from recleagueparser.schedules.schedule import Schedule
-from recleagueparser.schedules.game import Game
+from recleagueparser.schedules.game import Game, LOCATION_JOINER
 import recleagueparser.parsetime as pt
 from icalendar import Calendar
 import sys
@@ -73,7 +73,7 @@ class ICSSchedule(Schedule):
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))  
         return games
 
-    def parse_location(self, full_location, delim=" - "):
+    def parse_location(self, full_location, delim=LOCATION_JOINER):
         if not full_location:
             return None, None
         if delim not in full_location:
