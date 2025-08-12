@@ -45,7 +45,7 @@ class ICSSchedule(Schedule):
             for i in cal.walk():
                 if i.name == "VEVENT":
                     # Parse Teams
-                    hteam, ateam = self.parse_summary(i.get("summary"))
+                    ateam, hteam = self.parse_summary(i.get("summary"))
 
                     # Parse Date
                     dt = i.get("dtstart").dt
