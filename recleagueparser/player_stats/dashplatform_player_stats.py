@@ -29,6 +29,14 @@ class DashPlatformPlayerStats(PlayerStats):
     }
 
     def __init__(self, team_id, company, username, password,**kwargs):
+        # Login required for PlayerStats in DashPlatform
+        if username is None:
+            raise ValueError("Username is required for DashPlatformPlayerStats")
+        if password is None:
+            raise ValueError("Password is required for DashPlatformPlayerStats")
+        if company is None:
+            raise ValueError("Company is required for DashPlatformPlayerStats")
+
         # Need to create the session *before* constructing the PlayerStats object
         self.team_id = team_id
         self.company = company
