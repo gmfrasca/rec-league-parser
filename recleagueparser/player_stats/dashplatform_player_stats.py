@@ -28,35 +28,35 @@ class DashPlatformPlayerStats(PlayerStats):
         'games_played': 7
     }
 
-    def __init__(self, team_id, company, username, password,**kwargs):
+    def __init__(self, team_id, company_id, username, password,**kwargs):
         # Login required for PlayerStats in DashPlatform
         if username is None:
             raise ValueError("Username is required for DashPlatformPlayerStats")
         if password is None:
             raise ValueError("Password is required for DashPlatformPlayerStats")
-        if company is None:
-            raise ValueError("Company is required for DashPlatformPlayerStats")
+        if company_id is None:
+            raise ValueError("Company ID is required for DashPlatformPlayerStats")
 
         # Need to create the session *before* constructing the PlayerStats object
         self.team_id = team_id
-        self.company = company
-        self.session = self._login(username, password, company)
-        super(DashPlatformPlayerStats, self).__init__(team_id=team_id, company=company, **kwargs)
+        self.company_id = company_id
+        self.session = self._login(username, password, company_id)
+        super(DashPlatformPlayerStats, self).__init__(team_id=team_id, company_id=company_id, **kwargs)
 
-    def _login(self, username, password, company):
+    def _login(self, username, password):
         session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(max_retries=5)
         session.mount('http://', adapter)
         session.mount('https://', adapter)
 
-        login_page=f"{DASH_URL}/dash/jsonapi/api/v1/customer/auth/token?company={company}"
+        login_page=f"{DASH_URL}/dash/jsonapi/api/v1/customer/auth/token?company={self.company_id}"
         login_payload = {
             "grant_type": "client_credentials",
             "client_id": username,
             "client_secret": password,
             "stay_signed_in": True,
-            "company": self.company,
-            "company_code": self.company
+            "company": self.company_id,
+            "company_code": self.company_id
         }
         r = session.post(login_page, data=login_payload)
         return session
@@ -67,7 +67,7 @@ class DashPlatformPlayerStats(PlayerStats):
         self.last_refresh = datetime.datetime.now()
 
     def get_stats_url(self, *args, **kwargs):
-        return f"{DASH_URL}{TEAM_STATS_EXT}&teamID={self.team_id}&company={self.company}"
+        return f"{DASH_URL}{TEAM_STATS_EXT}&teamID={self.team_id}&company={self.company_id}"
 
     def retrieve_html_tables(self, url):
         return self.retrieve_stats_table(url)
@@ -116,6 +116,6 @@ class DashPlatformPlayerStats(PlayerStats):
                             jersey_number=self.get_stat(cells,
                                                         'jersey_number'))
             players.update({player_name: player})
-        player_dict = dict(players=players, goalies=[])
+        player_dict = dict(players=players, goalies={})
         self._logger.debug("Player Dict: {}".format(player_dict))
         return player_dict
