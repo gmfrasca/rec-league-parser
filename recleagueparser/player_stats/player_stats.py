@@ -17,11 +17,12 @@ class PlayerStats(object):
 
     STALE_TIME = 60
 
-    def __init__(self, team_id=None, season_id=None, company=None, **kwargs):
+    def __init__(self, team_id=None, season_id=None, company_id=None, **kwargs):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.html_doc = None
         self.team_id = team_id
         self.season_id = season_id
+        self.company_id = company_id
         self.games = list()
         self.url = self.get_stats_url(team_id, season_id)
         self.refresh_stats()
