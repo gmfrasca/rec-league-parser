@@ -19,13 +19,16 @@ class Schedule(object):
     DEFAULT_COLUMNS = {}
 
     def __init__(self, team_id, season_id=None, company=None,
-                 columns=None, **kwargs):
+                 columns=None, include_keywords=[], exclude_keywords=[],
+                 **kwargs):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.html_doc = None
         self.team_id = team_id
         self.season_id = season_id
         self.company = company
         self.team_name = None
+        self.include_keywords = include_keywords
+        self.exclude_keywords = exclude_keywords
         self.games = list()
         self.columns = self.DEFAULT_COLUMNS
         if columns and isinstance(columns, dict):
@@ -134,11 +137,49 @@ class Schedule(object):
     def parse_table(self):
         raise NotImplementedError
 
+    def _game_has_keyword(self, game, keyword):
+        kw = keyword.lower()
+        return any([
+            kw in game.hometeam.lower(),
+            kw in game.awayteam.lower(),
+            kw in game.location.lower() if game.location else False,
+            kw in game.field.lower() if game.field else False,
+            kw in game.date.lower() if game.date else False,
+        ])
+
+    def _filter_games(self, games, include_keywords, exclude_keywords):
+        """
+        Filter games based on include and exclude keywords
+
+        Args:
+            games (list): A list of games to filter
+            include_keywords (list): A list of keywords to include
+            exclude_keywords (list): A list of keywords to exclude
+        Returns:
+            A list of filtered games
+        """
+        filtered_games = []
+        for game in games:
+            include_game = False if self.include_keywords else True
+            for keyword in include_keywords:
+                if self._game_has_keyword(game, keyword):
+                    include_game = True
+                    break
+            for keyword in exclude_keywords:
+                if self._game_has_keyword(game, keyword):
+                    include_game = False
+                    break
+            if include_game:
+                filtered_games.append(game)
+
+        return filtered_games
+
     def refresh_schedule(self):
         """Reload the schedule from pointstreak"""
         self._logger.info("Refreshing Schedule")
         self.html_table = self.retrieve_html_table(self.url)
-        self.games = self.parse_table()
+        games = self.parse_table()
+        self.games = self._filter_games(games, self.include_keywords, self.exclude_keywords)
 
     def send_get_request(self, url):
         self._logger.info("Retrieving Schedule")
