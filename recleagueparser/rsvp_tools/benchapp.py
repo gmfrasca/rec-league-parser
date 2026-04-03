@@ -58,7 +58,9 @@ class BenchApp(RsvpTool):
         text = playeritem.findAll("a", {"href": "#profile"})[0]
         date = text.small
         name = date.previous_sibling
-        return name, date
+        position_item = playeritem.find("span", {"class": "playerPosition"})
+        position = position_item.text if position_item else None
+        return name, date, position
 
     @property
     def has_upcoming_game(self):
@@ -103,15 +105,17 @@ class BenchApp(RsvpTool):
         # out_count = soup.find("div", {"class": "outCount"}).text
         # data = dict(in_count=in_count, out_count=out_count)
         data = dict()
+        data['all'] = list()
         for checkin_type in ['attending', 'notAttending',
                              'waitlist', 'unknown']:
             players = soup.find("ul", {"id": checkin_type})
             playeritems = players.findAll("li", {"class": "playerItem"})
             player_list = list()
             for playeritem in playeritems:
-                player, date = self.parse_playeritem(playeritem)
-                player_list.append(dict(player=player, date=date))
+                player, date, position = self.parse_playeritem(playeritem)
+                player_list.append(dict(player=player, date=date, position=position))
             data.update({checkin_type: player_list})
+            data['all'].extend(player_list)
         self.next_game_data = data
         return data
 
@@ -169,7 +173,6 @@ class BenchApp(RsvpTool):
         return self.get_list_of_player_names('unknown')
 
     def get_number_checked_in(self):
-
         return len(self.get_list_of_attending_players())
 
     def get_number_checked_out(self):
@@ -180,6 +183,26 @@ class BenchApp(RsvpTool):
 
     def get_number_of_unknown_status_players(self):
         return len(self.get_list_of_unknown_status_players())
+
+    def get_checked_in_players_in_position(self, position="G"):
+        data = self.get_next_game_data()
+        player_list = data.get('attending', list())
+        return [p for p in player_list if p.get('position') == position]
+
+    def get_checked_in_goalies(self):
+        return self.get_checked_in_players_in_position("G")
+
+    def get_checked_in_forwards(self):
+        return self.get_checked_in_players_in_position("F")
+
+    def get_checked_in_defensemen(self):
+        return self.get_checked_in_players_in_position("D")
+
+    def get_goalie_alert(self):
+        goalies = self.get_checked_in_goalies()
+        if len(goalies) < 1:
+            return "ALERT: No goalies checked in"
+        return "Goalies checked in: {0}".format(', '.join([p.get('player') for p in goalies]))
 
     def get_next_game_attendance(self):
         self._logger.info("Getting next game's attendance")
@@ -212,6 +235,12 @@ class BenchApp(RsvpTool):
                                                  wait_str, unkn_str)
         else:
             return "No upcoming games found."
+
+    def get_next_game_attendees_with_role(self, role):
+        self._logger.info("Getting next game's attendees with role: {}".format(role))
+        if self.has_upcoming_game:
+            return "No upcoming games found."
+        
 
     def get_next_game_lines(self):
         self._logger.debug("Getting next game's positions")
