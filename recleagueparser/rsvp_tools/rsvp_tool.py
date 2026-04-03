@@ -29,6 +29,9 @@ class RsvpTool(object):
     def get_next_game_attendees(self):
         return 'NextGameAttendees'
 
+    def get_next_game_attendees_with_role(self, role):
+        return 'NextGameAttendeesWithRole'
+
     def reset_game_data(self):
         pass
 
@@ -40,6 +43,9 @@ class RsvpTool(object):
 
     def get_team_fee_progress(self):
         return None
+
+    def get_goalie_alert(self):
+        return ""
 
     def lookup_rsvp_user(self, in_name):
         '''
