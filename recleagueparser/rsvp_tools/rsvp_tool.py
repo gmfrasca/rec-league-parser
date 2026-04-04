@@ -44,6 +44,9 @@ class RsvpTool(object):
     def get_team_fee_progress(self):
         return None
 
+    def get_players_checkin_notes(self):
+        return ""
+
     def get_goalie_alert(self):
         return ""
 
