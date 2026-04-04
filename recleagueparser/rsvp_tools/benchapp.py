@@ -60,7 +60,9 @@ class BenchApp(RsvpTool):
         name = date.previous_sibling
         position_item = playeritem.find("span", {"class": "playerPosition"})
         position = position_item.text if position_item else None
-        return name, date, position
+        note_item = playeritem.find("div", {"class": "attendanceNote"})
+        note = note_item.text if note_item else None
+        return name, date, position, note
 
     @property
     def has_upcoming_game(self):
@@ -112,8 +114,8 @@ class BenchApp(RsvpTool):
             playeritems = players.findAll("li", {"class": "playerItem"})
             player_list = list()
             for playeritem in playeritems:
-                player, date, position = self.parse_playeritem(playeritem)
-                player_list.append(dict(player=player, date=date, position=position))
+                player, date, position, note = self.parse_playeritem(playeritem)
+                player_list.append(dict(player=player, date=date, position=position, note=note))
             data.update({checkin_type: player_list})
             data['all'].extend(player_list)
         self.next_game_data = data
@@ -197,6 +199,17 @@ class BenchApp(RsvpTool):
 
     def get_checked_in_defensemen(self):
         return self.get_checked_in_players_in_position("D")
+
+    def get_players_checkin_notes(self):
+        data = self.get_next_game_data()
+        player_list = data.get('all', list())
+        note_items = [p for p in player_list if p.get('note')]
+        notes = list()
+        for n in note_items:
+            player = n.get('player')
+            note = n.get('note', "")
+            notes.append(f"{player}: {note}")
+        return '\r\n'.join(notes)
 
     def get_goalie_alert(self):
         goalies = self.get_checked_in_goalies()
