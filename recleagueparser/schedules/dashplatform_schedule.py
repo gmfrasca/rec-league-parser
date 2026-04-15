@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from recleagueparser.schedules.schedule import Schedule
 from recleagueparser.schedules.game import Game
 import datetime
+import requests
 import logging
 import sys
 
@@ -15,6 +16,8 @@ class DashPlatformSchedule(Schedule):
 
     DASH_URL = 'https://apps.dashplatform.com/'
     SCHEDULE_URL = '/dash/index.php?Action=Team/index'
+    GAMESTATS_URL = '/dash/index.php?Action=Stats/game'
+    LOGIN_PAGE = '/dash/jsonapi/api/v1/customer/auth/token'
 
     DEFAULT_COLUMNS = {
         'homescore': 2,
@@ -23,16 +26,39 @@ class DashPlatformSchedule(Schedule):
         'awayteam': 5,
     }
 
-    def __init__(self, team_id, company_id, columns=None, default_game_final=False, **kwargs):
+    def __init__(self, team_id, company_id, columns=None, default_game_final=False,
+    username=None, password=None, **kwargs):
         super(DashPlatformSchedule, self).__init__(team_id=team_id,
                                                    company_id=company_id,
+                                                   email=None,
+                                                   password=None,
                                                    columns=columns, **kwargs)
         self.html_doc = None
         self.team_id = team_id
         self.company_id = company_id
         self.default_game_final = default_game_final
         self.url = self.get_schedule_url(self.team_id, self.company_id)
+        self.authenticated_session = None
+        if username is not None and password is not None:
+            self.authenticated_session = self._login(username, password)
         self.refresh_schedule()
+
+    def _login(self, username, password):
+        if self.authenticated_session is None:
+            session = requests.Session()
+            login_page=f"https://apps.daysmartrecreation.com/dash/jsonapi/api/v1/customer/auth/token?company={self.company_id}"
+            login_payload = {
+                "grant_type": "client_credentials",
+                "client_id": username,
+                "client_secret": password,
+                "stay_signed_in": True,
+                "company": self.company_id,
+                "company_code": self.company_id
+            }
+
+            session.post(login_page, data=login_payload)
+            self.authenticated_session = session
+        return self.authenticated_session
 
     def get_schedule_url(self, team_id, company):
         sched_params = 'teamid={0}&company={1}'.format(team_id, company)
@@ -144,6 +170,9 @@ class DashPlatformSchedule(Schedule):
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))
         return games
 
+    def stats_available(self, game):
+        return game.id is not None
+
     def find_game_id(self, game_row):
         id_link = game_row.find('a', {'title': 'Stats'})
         id = None
@@ -154,6 +183,75 @@ class DashPlatformSchedule(Schedule):
             if len(event_ids) > 0:
                 id = event_ids[0].split("=")[-1]
         return id
+
+    def get_game_stats_url(self, game_id):
+        return "{0}{1}&company={2}&eventID={3}".format(self.DASH_URL, self.GAMESTATS_URL, self.company_id, game_id)
+
+    def get_game_stats(self, game_id):
+        game_stats_cols = {
+            'player_name': 0,
+            'goals': 1,
+            'assists': 2,
+            'pim': 3,
+            'goals_against': 4,
+            'shots_against': 5,
+            'saves': 6,
+            'games_played': 7
+        }
+        if not self.authenticated_session:
+            return {}
+        self._logger.info(f"Getting game stats for game ID: {game_id}")
+        url = self.get_game_stats_url(game_id)
+        page = self.authenticated_session.get(url)
+        stats_soup = BeautifulSoup(page.text, 'html.parser')
+        player_stats_table = stats_soup.find_all("table")[3]
+        inner_tables = player_stats_table.find_all("table", {'class': 'tablecondensed'})
+        stats = {}
+        for inner_table in inner_tables:
+            team_name = inner_table.find("th").text.split("-")[0].strip()
+            stats[team_name] = {}
+            first = True
+            for row in inner_table.find_all("tr"):
+                if first:
+                    first = False
+                    continue
+                cells = row.find_all("td")
+                if len(cells) > 0:
+                    player_name = cells[game_stats_cols['player_name']].a.text.strip()
+                    stats[team_name][player_name] = {
+                        'goals': int(cells[game_stats_cols['goals']].text.strip()),
+                        'assists': int(cells[game_stats_cols['assists']].text.strip()),
+                        'pim': int(cells[game_stats_cols['pim']].text.strip()),
+                        'goals_against': int(cells[game_stats_cols['goals_against']].text.strip()),
+                        'shots_against': int(cells[game_stats_cols['shots_against']].text.strip()),
+                        'saves': int(cells[game_stats_cols['saves']].text.strip()),
+                        'games_played': int(cells[game_stats_cols['games_played']].text.strip()),
+                    }
+        return stats
+
+    def get_stats_summary(self, game_id):
+        game_stats = self.get_game_stats(game_id)
+        summary = "Game Summary:"
+        goals_by = ""
+        assists_by = ""
+        pim_by = ""
+
+        # Get goals by player
+        for team, players in game_stats.items():
+            for player, stats in players.items():
+                if stats['goals'] > 0:
+                    goals_by += f"[{team}] {player} ({stats['goals']})\n"
+                if stats['assists'] > 0:
+                    assists_by += f"[{team}] {player} ({stats['assists']})\n"
+                if stats['pim'] > 0:
+                    pim_by += f"[{team}] {player} ({stats['pim']})\n"
+        if goals_by:
+            summary += f"\nGoals by:\n{goals_by}"
+        if assists_by:
+            summary += f"\nAssists by:\n{assists_by}"
+        if pim_by:
+            summary += f"\nPenalties:\n{pim_by}"
+        return summary
 
     def is_score_final(self, score, game_started=False):
         if game_started:
@@ -180,6 +278,6 @@ class DashPlatformSchedule(Schedule):
 
 if __name__ == '__main__':
     assert len(sys.argv) > 2
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     sched = DashPlatformSchedule(team_id=sys.argv[1], company_id=sys.argv[2])
-    logging.debug(sched)
+    logging.info(sched)
