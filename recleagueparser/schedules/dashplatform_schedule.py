@@ -140,10 +140,12 @@ class DashPlatformSchedule(Schedule):
                     self._logger.debug("Could not find game Location, skipping.")
                     
                 final = self.is_score_final(None, game_started)
+                id = self.find_game_id(game_row)
                 game = Game(gamedate, gametime, hteam, hscore,
                             ateam, ascore, prevgame=prevgame, final=final,
                             location=location, field=field,
-                            home_id=hteam_id, away_id=ateam_id)
+                            home_id=hteam_id, away_id=ateam_id,
+                            location=location, field=field, id=id)
                 games.append(game)
                 prevgame = game
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))
@@ -155,6 +157,17 @@ class DashPlatformSchedule(Schedule):
         if len(tid) > 0:
             return tid[0].split("=")[-1]
         return None
+
+    def find_game_id(self, game_row):
+        id_link = game_row.find('a', {'title': 'Stats'})
+        id = None
+        if id_link:
+            id_ext = id_link.get('href').split("/")[-1]
+            id_params = id_ext.split("&")
+            event_ids = [x for x in id_params if "eventID" in x]
+            if len(event_ids) > 0:
+                id = event_ids[0].split("=")[-1]
+        return id
 
     def is_score_final(self, score, game_started=False):
         if game_started:
