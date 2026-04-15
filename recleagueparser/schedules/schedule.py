@@ -174,6 +174,10 @@ class Schedule(object):
 
         return filtered_games
 
+    def get_game_stats_summary(self, game_id):
+        # Overide with the schedule specific implementation, return empty if not available
+        return ""
+
     def refresh_schedule(self):
         """Reload the schedule from pointstreak"""
         self._logger.info("Refreshing Schedule")
