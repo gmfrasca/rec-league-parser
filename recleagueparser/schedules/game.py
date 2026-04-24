@@ -9,7 +9,7 @@ class Game(object):
 
     def __init__(self, date, time, hometeam, homescore, awayteam, awayscore,
                  year=None, prevgame=None, final=False, cancelled=False,
-                 location=None, field=None):
+                 location=None, field=None, id=None):
         """ Store this game's relevant data """
         self.final = final
         self.cancelled = cancelled
@@ -22,6 +22,7 @@ class Game(object):
         self.awayscore = awayscore
         self.location = location
         self.field = field
+        self.id = id
 
     @property
     def data(self):
@@ -34,7 +35,8 @@ class Game(object):
                     awayteam=self.awayteam,
                     awayscore=self.awayscore,
                     final=self.final,
-                    cancelled=self.cancelled)
+                    cancelled=self.cancelled,
+                    id=self.id)
 
     @property
     def winning_team(self):
