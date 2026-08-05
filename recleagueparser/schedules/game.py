@@ -1,15 +1,17 @@
 from recleagueparser import parsetime as pt
+from recleagueparser.schedules.team import Team
 import datetime
 
 DEFAULT_COMPLETED_GAME_TIME = "12:01 AM EST"
 LOCATION_JOINER = " - "
+
 
 class Game(object):
     """Represents a game parsed from a Pointstreak schedule"""
 
     def __init__(self, date, time, hometeam, homescore, awayteam, awayscore,
                  year=None, prevgame=None, final=False, cancelled=False,
-                 location=None, field=None):
+                 location=None, field=None, home_id=None, away_id=None):
         """ Store this game's relevant data """
         self.final = final
         self.cancelled = cancelled
@@ -17,8 +19,10 @@ class Game(object):
         self.prevgame = prevgame
         self.parse_date(date, time, self.year, prevgame)
         self.hometeam = hometeam
+        self.hometeam_obj = Team(hometeam, home_id)
         self.homescore = homescore
         self.awayteam = awayteam
+        self.awayteam_obj = Team(awayteam, away_id)
         self.awayscore = awayscore
         self.location = location
         self.field = field
