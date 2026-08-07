@@ -9,6 +9,7 @@ from recleagueparser.schedules.game import Game
 import datetime
 import logging
 import sys
+import re
 
 
 class DashPlatformSchedule(Schedule):
@@ -94,6 +95,8 @@ class DashPlatformSchedule(Schedule):
                 # Default Team/Score values
                 ateam = "AWAY"
                 hteam = "HOME"
+                ateam_id = None
+                hteam_id = None
                 ascore = None
                 hscore = None
 
@@ -103,6 +106,7 @@ class DashPlatformSchedule(Schedule):
                 # Set Away Team and Score
                 try:
                     ateam = away_cells[0].a.text
+                    ateam_id = self.parse_param_from_link(away_cells[0].a['href'], "teamid")
                     ascore = away_cells[1].text
                     if ascore == "-":
                         ascore = None
@@ -115,6 +119,7 @@ class DashPlatformSchedule(Schedule):
                 # Set Home Team and Score
                 try:
                     hteam = home_cells[0].a.text
+                    hteam_id = self.parse_param_from_link(home_cells[0].a['href'], "teamid")
                     hscore = home_cells[1].text
                     if hscore == "-":
                         hscore = None
@@ -137,11 +142,19 @@ class DashPlatformSchedule(Schedule):
                 final = self.is_score_final(None, game_started)
                 game = Game(gamedate, gametime, hteam, hscore,
                             ateam, ascore, prevgame=prevgame, final=final,
-                            location=location, field=field)
+                            location=location, field=field,
+                            home_id=hteam_id, away_id=ateam_id)
                 games.append(game)
                 prevgame = game
         self._logger.info("Parsed {} Games from Data Table".format(len(games)))
         return games
+
+    def parse_param_from_link(self, link, param):
+        params = re.split("&|\\?", link)
+        tid = [x for x in params if "teamid" in x]
+        if len(tid) > 0:
+            return tid[0].split("=")[-1]
+        return None
 
     def is_score_final(self, score, game_started=False):
         if game_started:
