@@ -4,20 +4,31 @@ from bs4 import BeautifulSoup
 from re import sub
 from decimal import Decimal
 from functools import reduce
-from requests import Request
 import logging
 import sys
 import re
 
 
-DEFAULT_URL = 'https://new.benchapp.com'
-LOGIN_URL = '/player-area/ajax/login.php'
+DEFAULT_URL = 'https://old.benchapp.com'
+GRAPHQL_URL = 'https://graphql.benchapp.com/graphql'
+LOGIN_URL = '/player-area/login.php'
 LOGOUT_URL = '/logout'
 NEXT_GAME_URL = '/schedule/next-event'
 CHECKIN_URL = '/schedule-area/ajax/setAttendance.php'
 FINANCES_URL = '/team/finances/fees/index.html'
 
 PROGRESS_BAR_CHARS = 20
+
+LOGIN_MUTATION = """
+mutation login($input: LoginInput!) {
+  login(input: $input) {
+    token
+    player {
+      id
+    }
+  }
+}
+"""
 
 
 class BenchApp(RsvpTool):
@@ -35,21 +46,45 @@ class BenchApp(RsvpTool):
             return
         try:
             self._logger.info("Logging into BenchApp")
-            data = {"email": self.username, "password": self.password}
-            req = Request(
-                "POST",
+            resp = self.session.post(
+                GRAPHQL_URL,
+                json={
+                    "operationName": "login",
+                    "query": LOGIN_MUTATION,
+                    "variables": {
+                        "input": {
+                            "email": self.username.strip(),
+                            "password": self.password,
+                        },
+                    },
+                },
+                timeout=60,
+            )
+            resp.raise_for_status()
+            result = resp.json()
+            if result.get("errors"):
+                messages = "; ".join(
+                    error.get("message", "Unknown error")
+                    for error in result["errors"])
+                raise RuntimeError(f"BenchApp login failed: {messages}")
+            login = (result.get("data") or {}).get("login") or {}
+            token = login.get("token")
+            if not isinstance(token, str) or not token.strip():
+                raise RuntimeError("BenchApp login did not return an access token")
+
+            resp = self.session.get(
                 f"{self.baseurl}{LOGIN_URL}",
-                files={
-                    "email": (None, data["email"]),
-                    "password": (None, data["password"]),
-                }
-            ).prepare()
-            resp = self.session.send(req)
-            self._logger.debug(resp.text)
+                params={"accessToken": token},
+                timeout=60,
+            )
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            if soup.find('body', id='login') is not None:
+                raise RuntimeError("BenchApp legacy session login failed")
             self._logged_in = True
         except Exception:
+            self._logger.warning("Could not log into Benchapp")
             return
-            self._logger.warning("Could not log into BenchApp")
 
     def logout(self):
         self.session.post("{0}{1}".FORMAT(self.baseurl, LOGOUT_URL))
@@ -437,11 +472,11 @@ class BenchApp(RsvpTool):
 
 def main():
     assert len(sys.argv) > 2
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     ba = BenchApp(sys.argv[1], sys.argv[2])
-    logging.debug(ba.get_next_game_attendees())
-    logging.debug(ba.get_next_game_attendance())
-    logging.debug(ba.get_next_game_lines())
+    logging.info(ba.get_next_game_attendees())
+    logging.info(ba.get_next_game_attendance())
+    logging.info(ba.get_next_game_lines())
 
 
 if __name__ == '__main__':
